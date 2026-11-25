@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" aria-hidden="true">
+  <defs>
+    <linearGradient id="cursor-ink" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#b78aff"/>
+      <stop offset="50%" stop-color="#fc82d6"/>
+      <stop offset="100%" stop-color="#7de3ff"/>
+      <animateTransform attributeName="gradientTransform" type="rotate" from="0 .5 .5" to="360 .5 .5" dur="4s" repeatCount="indefinite"/>
+    </linearGradient>
+  </defs>
+  <path d="M 8 3 Q 6 2 6 6 L 6 29 Q 6 32 9 29 L 15 22 L 24 22 Q 28 22 25 19 Z" fill="url(#cursor-ink)" fill-rule="evenodd"/>
+</svg>

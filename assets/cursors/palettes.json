@@ -1,0 +1,29 @@
+{
+  "aurora": [
+    "#b78aff",
+    "#fc82d6",
+    "#7de3ff"
+  ],
+  "sunset": [
+    "#ffbd7d",
+    "#ff6aaf",
+    "#c487ff"
+  ],
+  "ocean": [
+    "#57e9d6",
+    "#6ca5ff",
+    "#b48bff"
+  ],
+  "rainbow": [
+    "#ff6f91",
+    "#ffd66f",
+    "#7df5bc",
+    "#74aaff",
+    "#d68dff"
+  ],
+  "mono": [
+    "#e9dcff",
+    "#b18dff",
+    "#e9dcff"
+  ]
+}

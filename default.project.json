@@ -1,0 +1,32 @@
+{
+  "name": "AETHER",
+  "tree": {
+    "$className": "DataModel",
+    "ReplicatedStorage": {
+      "Aether": {
+        "$path": "src/shared"
+      }
+    },
+    "ServerScriptService": {
+      "AetherProfiles": {
+        "$path": "src/server/Profiles.server.luau",
+        "Schema": {
+          "$path": "src/shared/Schema.luau"
+        }
+      },
+      "AetherLiveUpdates": {
+        "$path": "src/server/LiveUpdates.server.luau",
+        "$attributes": {
+          "EnabledRelay": true
+        }
+      }
+    },
+    "StarterPlayer": {
+      "StarterPlayerScripts": {
+        "AetherClient": {
+          "$path": "src/client/Aether.client.luau"
+        }
+      }
+    }
+  }
+}

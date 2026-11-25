@@ -1,0 +1,141 @@
+-- Shared, data-only contract. All settings/banks contain JSON primitives, not Instances.
+local S = {version = 1, defs = {}, order = {}, kinds = {"Theme","HUD","Motion","Character","Wings","Halos","Neon","Ambient","Indicators","Cursor","Camera","Interaction","Fonts","Scripts"}}
+S.shapes = {"Soft Triangle","Chevron","Diamond","Neon Pointer","Double Chevron","Angel Wings","Orbit Arc","Location Pin","Arrowhead","Split Arrow","Needle","Broad Chevron","Hollow Diamond","Crystal","Spear","Twin Wings","Shield","Beacon","Star Pointer","Compass","Double Spike","Arc Pointer","Kite","Crosshair"}
+S.fonts = {"Gotham","Code","RobotoMono","Ubuntu","Nunito","GothamMedium","SciFi","Arcade","FredokaOne","Oswald","TitilliumWeb","SourceSans","Highway","Fantasy","Garamond","Bodoni","Bangers","Cartoon","Kalam","Roboto","Sarpanch"}
+-- name, high sky, horizon, low light, fog %, bloom %, clock (tenths of an hour), brightness %, saturation.
+S.skies = {
+ {"Dreamcore","282057","8C70C2","EAB6CD",35,40,166,105,9},{"Cyberpunk","090B2A","741CA4","F032A9",26,80,210,92,42},
+ {"Anime","70AFE5","C8A4E8","FFE0AD",16,34,141,118,18},{"Midnight","060A1D","1A2455","403D75",20,18,8,65,-22},
+ {"Aurora","091E33","2B6B86","A56ACC",24,48,30,91,25},{"Sunset","563857","DC7165","FFC888",42,60,178,108,23},
+ {"Nebula","151137","6143A0","C882CB",56,65,225,87,34},{"Moonlight","080F35","526493","D1DEED",34,52,24,79,-24},
+ {"Anime Sunset","5269B9","EAA6AE","FFE1A1",25,43,174,106,12},{"Vaporwave","281858","D258B0","F2A8C6",37,57,189,95,32},
+ {"Golden Hour","2E254D","D8798A","FFCE7E",38,52,171,107,8},{"Ocean Night","061A30","124969","52B4BC",28,30,34,73,-4},
+ {"Sakura","5B3B83","C18EC4","FFCEE4",32,48,145,108,5},{"Eclipse","090914","393251","B187A5",23,61,120,64,-24},
+ {"Neon Rain","070F25","2646A5","BC4CF3",57,70,201,82,28},{"Twilight","151A49","74539C","E1A6BD",34,35,185,88,-10},
+}
+local function def(g,k,title,kind,value,lo,hi)
+ S.defs[k]={group=g,label=title,kind=kind,default=value,min=lo,max=hi}; table.insert(S.order,k)
+end
+local function toggle(g,k,t,v) def(g,k,t,"bool",v) end
+local function range(g,k,t,v,a,b) def(g,k,t,"number",v,a,b) end
+local function choice(g,k,t,v,opts) def(g,k,t,"choice",v,opts) end
+local function color(g,k,t,v) def(g,k,t,"color",v) end
+local function text(g,k,t,v,n) def(g,k,t,"text",v,0,n) end
+color("Theme","accent","Accent","A68AFF");color("Theme","secondary","Second neon","FF89C7");color("Theme","glassColor","Glass tint","211C35");color("Theme","uiFontColor","Studio text color","F1E6FF");color("Theme","uiMutedColor","Studio secondary text","ADA3C5");def("Theme","iconAtlas","Original icon atlas Roblox asset ID","asset","");choice("Theme","iconAtlasTile","Atlas tile size (pixels)","128",{"128","224"})
+range("Theme","glass","Glass opacity %",81,10,100);range("Theme","rim","Neon rim %",55,0,100);toggle("Theme","sparkles","Floating sparkles",true)
+toggle("Motion","reduce","Reduce motion",false);range("Motion","speed","Animation speed %",100,40,200);range("Motion","duration","Transition (ms)",380,80,1400);choice("Motion","ease","Interpolation","Smooth",{"Smooth","Linear","Sine"});choice("Motion","menuTransition","Menu transition","Glass",{"Glass","Slide","Fade","Off"});range("Motion","menuAnimStrength","Menu motion intensity %",75,0,100);toggle("Motion","tabTransition","Animated page transitions",true);toggle("Motion","navGlow","Animated navigation glow",true)
+toggle("Theme","menuGeometry","Animated geometric background",true);choice("Theme","menuShape","Background style","Mixed",{"Mixed","Rings","Crystals","Triangles","Hexagons","Squares","Stars","Dots","Rounded Star","Soft Star","Sparkle","Long Sparkle","Six Point Star","Eight Point Star","Circle","Rounded Square","Diamond","Rounded Triangle","Rounded Hexagon","Rounded Pentagon","Heart"});range("Theme","menuDensity","Background density",14,4,24);range("Theme","menuMotion","Background speed %",65,0,180);range("Theme","menuOpacity","Background intensity %",55,0,100);
+range("Theme","constellationLinks","Maximum connections",100,0,100);range("Theme","constellationDistance","Connection distance (px)",115,25,220);range("Theme","constellationThickness","Line width (tenths of px)",7,3,20);range("Theme","constellationSize","Figure size (px)",5,2,14);range("Theme","constellationAngle","Background gradient angle",45,0,360);color("Theme","constellationBgA","Background start","10091C");color("Theme","constellationBgB","Background end","35204D");color("Theme","constellationLineA","Line start","ECE0FF");color("Theme","constellationLineB","Line end","A66AFF");color("Theme","constellationNodeA","Figure start","FFFFFF");color("Theme","constellationNodeB","Figure end","BE8AFF");toggle("Theme","screenParticles","Menu screen particles",true);choice("Theme","screenParticleStyle","Screen particle style","Mixed",{"Mixed","Stars","Dust","Diamonds"});range("Theme","screenParticleCount","Screen particle count",24,8,48);range("Theme","screenParticleOpacity","Screen particle intensity %",55,0,100);toggle("Theme","robloxRail","Roblox shortcuts rail",true);toggle("Theme","topCapsule","Interactive top capsule",true)
+choice("Theme","menuDock","Menu docking side","Left",{"Left","Right","Top","Bottom","Floating"});range("Theme","menuWidth","Menu width (px)",438,280,1600);range("Theme","menuHeight","Menu height (px)",600,260,1200);toggle("Theme","menuDrag","Drag / snap menu",true);toggle("Theme","menuResize","Resize with corner grip",true);range("Theme","menuFloatX","Floating horizontal %",35,0,100);range("Theme","menuFloatY","Floating vertical %",40,0,100)
+toggle("HUD","locked","Lock widget positions",true);toggle("HUD","movePanels","Allow moving top and left panels",false);toggle("HUD","topCustom","Custom top panel position",false);range("HUD","topX","Top panel X %",50,0,100);range("HUD","topY","Top panel Y %",2,0,100);toggle("HUD","railCustom","Custom left panel position",false);range("HUD","railX","Left panel X %",1,0,100);range("HUD","railY","Left panel Y %",46,0,100);toggle("HUD","compact","Compact health panel",true);choice("HUD","layoutMode","HUD layout","Sketch",{"Sketch","Custom"});choice("HUD","hudMotion","Widget animation","Glass",{"Glass","Float","Pulse","Off"});range("HUD","hudMotionStrength","Widget motion intensity %",65,0,100);toggle("HUD","hudShine","Health bar shimmer",true);toggle("HUD","hudReaction","Damage and healing glow",true);range("HUD","hudSmoothness","HUD smoothing (ms)",320,100,900)
+choice("HUD","heartPalette","Heart gradient","Adaptive",{"Adaptive","Aurora","Amethyst","Ocean","Sakura","Sunset","Ember","Mint","Ice","Galaxy","Rainbow","Custom"});choice("HUD","heartDirection","Heart gradient direction","Vertical",{"Vertical","Horizontal","Diagonal","Reverse","Orbit"});range("HUD","heartGradientSpeed","Heart gradient speed %",60,0,150);color("HUD","heartA","Heart custom start","BA99FF");color("HUD","heartMid","Heart custom middle","F8CCFF");color("HUD","heartB","Heart custom end","69D9FA");range("HUD","heartGlow","Heart glow %",65,0,100)
+for _,row in {{"hp","Health",3,9},{"clock","Clock",3,96},{"profile","Player card",97,9},{"dock","Studio dock",50,96},{"cross","Reticle",50,50}} do
+ local k,t=row[1],row[2];toggle("HUD",k,t,true); range("HUD",k.."X",t.." · horizontal %",row[3],0,100);range("HUD",k.."Y",t.." · vertical %",row[4],0,100)
+ range("HUD",k.."Scale",t.." · scale %",100,50,160);range("HUD",k.."Turn",t.." · rotation",0,-180,180);range("HUD",k.."Alpha",t.." · opacity %",100,10,100)
+end
+toggle("Character","walkAnimation","Custom walking animation",false);choice("Character","walkStyle","Walking style","Natural",{"Natural","Heroic","Floating","Bouncy","Glide","Ethereal","Toy","Robot","Ninja","Bubbly","Stylish","Mage","Levitation","Oldschool","Vampire","Astronaut","Zombie","Cartoony",
+ "Angel Glide","Bat Swoop","Mermaid Drift","Serpent Slither","Cartwheel Flow","Rubberhose","Dream Sleep","Plushie","Cat Paws","Shy Kawaii","Gymnast","Skip Hop","Reindeer Prance","Fighter","Harpy Glide","Godly Aura","Wavy Expressive","Retro Zombie","Tsundere","Doll Walk","Skater","Little Duck","Floating Head","Dark Aura","Anime Hero","Headless Float"});range("Character","walkIntensity","Walking intensity %",65,0,100);text("Character","motionStudioConfig","Motion Studio configuration","",2048);toggle("Character","aura","Aura particles",false);toggle("Character","trail","Motion trail",false);range("Character","auraRate","Emission / second",12,1,45);range("Character","trailLife","Trail lifetime (ms)",400,80,1300);color("Character","auraColor","Aura color","C4A3FF")
+toggle("Wings","wings","Show wings",false);choice("Wings","wingStyle","Silhouette","Seraph",{"Seraph","Blade","Sylph","Phoenix","Frost","Butterfly","Raven","Celestial","Crystal","Dusk","Petal","Storm","Royal","Eclipse","Prism Wings","Triad Wings","Hex Wings","Star Wings","Orbital Wings","Diamond Wings","Geo Bloom","Kagune","Seraphim","Burnt Fallen","Knife Wing","Crystal Wing"});range("Wings","wingSpan","Span %",100,50,175);range("Wings","wingSweep","Sweep (degrees)",24,-25,65);range("Wings","wingBeat","Flap speed %",90,0,200);color("Wings","wingColor","Feather color","B49BFF");toggle("Wings","wingRainbow","Prismatic feathers",false);choice("Wings","wingDetail","Feather detail","High",{"Balanced","High","Ultra"});toggle("Wings","wingWalk","Walking wing reaction",true);toggle("Wings","sketchColors","Original sketch palette",true);range("Wings","sketchGlow","Wing neon glow %",80,0,100);range("Wings","sketchMotion","Floating motion %",70,0,150);toggle("Wings","redDiamond","Red rotating diamond",false);toggle("Wings","blueDiamond","Blue rotating diamond",false);range("Wings","diamondSpeed","Diamond rotation %",100,0,200);range("Wings","diamondSize","Diamond size %",100,50,175);toggle("Wings","diamondEcho","Diamond rotation echoes",true)
+toggle("Halos","halo","Show halo",false);choice("Halos","haloStyle","Orbit form","Ring",{"Ring","Binary","Crown","Double Ring","Spiral","Starfall","Solar","Lunar","Orbitals","Thorns","Prism","Eclipse","Comet","Lotus","Triangle","Square","Pentagon","Hexagon","Octagon","Star","Double Diamond","Infinity"});range("Halos","haloRadius","Radius %",88,45,175);range("Halos","haloHeight","Height above head %",105,55,220);range("Halos","haloSpin","Orbit speed %",75,0,200);color("Halos","haloColor","Halo color","FFB4D6");toggle("Halos","haloRainbow","Prismatic halo",false);choice("Halos","haloDetail","Halo geometry detail","High",{"Balanced","High","Ultra"});toggle("Halos","haloWalk","Walking halo reaction",true);range("Halos","haloGlow","Legacy halo glow %",75,0,100)
+S.haloV2Styles={"Prism Shards","Classic Ring","Twin Ring","Orbit Rings","Cluster Halo","Fallen Fragments","Aether Crown"}
+S.haloV2Fields={"Enabled","Color","Secondary","Radius","Height","Spin","Opacity","Glow","Thickness","Count","Tilt"}
+for index,style in S.haloV2Styles do
+ local k="haloV2"..index
+ toggle("Halos",k.."Enabled",style,false)
+ color("Halos",k.."Color","Primary color","D6B7FF")
+ color("Halos",k.."Secondary","Secondary color","F5E5FF")
+ range("Halos",k.."Radius","Size %",100,40,200)
+ range("Halos",k.."Height","Height %",125,50,250)
+ range("Halos",k.."Spin","Rotation speed %",25,0,200)
+ range("Halos",k.."Opacity","Opacity %",100,0,100)
+ range("Halos",k.."Glow","Neon glow %",75,0,100)
+ range("Halos",k.."Thickness","Outline thickness %",100,30,250)
+ range("Halos",k.."Count","Shape count",if index==5 then 7 else 8,3,12)
+ range("Halos",k.."Tilt","Tilt degrees",0,-60,60)
+end
+toggle("Neon","neon","Character outline",true);range("Neon","neonFill","Body tint %",10,0,65);range("Neon","neonLight","Light intensity %",40,0,100);color("Neon","neonColor","Neon color","AB87FF");toggle("Neon","neonRainbow","Rainbow neon",false);choice("Neon","neonMotion","Neon animation","Breathe",{"Solid","Breathe","Aurora","Heartbeat","Flow","Reactive"});range("Neon","neonMotionSpeed","Neon animation speed %",90,0,180);range("Neon","neonMotionStrength","Neon animation intensity %",65,0,100);range("Neon","neonRange","Light radius (studs)",9,2,20);toggle("Neon","visualBloom","Real visual bloom",true);range("Neon","visualBloomStrength","Visual bloom strength %",70,0,100);range("Neon","visualBloomRadius","Visual bloom radius",28,8,56)
+toggle("Ambient","ambient","Apply local atmosphere",false);color("Ambient","skyA","High sky","282057");color("Ambient","skyB","Horizon","8C70C2");color("Ambient","skyC","Ground light","EAB6CD");range("Ambient","fog","Fog density %",35,0,90);range("Ambient","bloom","Bloom %",40,0,100);range("Ambient","time","Time (tenths of an hour)",166,0,239);range("Ambient","light","Brightness %",105,25,180);range("Ambient","saturation","Saturation %",9,-85,85);range("Ambient","blur","Depth blur",0,0,16);range("Ambient","fade","Atmosphere fade (ms)",700,0,3500);range("Ambient","worldContrast","Contrast %",0,-80,80);range("Ambient","worldExposure","Exposure %",0,-100,100);range("Ambient","worldGlare","Atmospheric glare %",0,0,100);range("Ambient","worldRays","Sun rays %",0,0,100);range("Ambient","worldFocus","Depth of field %",0,0,100);range("Ambient","worldFocusDistance","Focus distance (studs)",60,8,250);range("Ambient","worldBloomSize","Bloom radius",26,0,56);toggle("Ambient","starfall","Falling shapes",false);choice("Ambient","starfallShape","Falling shape","Rounded Star",{"Mixed","Rounded Star","Soft Star","Sparkle","Long Sparkle","Six Point Star","Eight Point Star","Circle","Rounded Square","Diamond","Rounded Triangle","Rounded Hexagon","Rounded Pentagon","Heart"});range("Ambient","starfallRotation","Star rotation (degrees/sec)",8,0,25);choice("Ambient","starfallMaterial","Star material","Neon",{"Neon","Glass","SmoothPlastic","Metal"});range("Ambient","starfallCount","Star count",8,1,16);range("Ambient","starfallSpeed","Fall speed (studs/sec)",35,10,90);range("Ambient","starfallSize","Star size (tenths of stud)",18,5,40);range("Ambient","starfallOpacity","Star opacity %",85,10,100);range("Ambient","starfallGlow","Star neon glow %",80,0,100);toggle("Ambient","starfallTail","Star streaks",true);toggle("Ambient","starfallRainbow","Rainbow stars",false);color("Ambient","starfallA","Star color start","E5D1FF");color("Ambient","starfallB","Star color end","83CFFF")
+toggle("Indicators","indicators","Directional indicators",true);choice("Indicators","shape","Indicator shape","Soft Triangle",S.shapes);range("Indicators","size","Size (px)",31,14,72);range("Indicators","corners","Corner softness %",30,0,100);range("Indicators","edge","Distance from edges %",11,4,30);range("Indicators","turn","Rotation smoothing (ms)",180,0,800);range("Indicators","ink","Neon intensity %",60,0,100);range("Indicators","spread","Neon spread (px)",6,0,18);range("Indicators","arrowAlpha","Opacity %",95,10,100);range("Indicators","arrowSpeed","Animation speed %",100,40,220);color("Indicators","arrowA","Gradient start","BFA2FF");color("Indicators","arrowB","Gradient end","FF9ECE");toggle("Indicators","arrowRainbow","Rainbow gradient",false);toggle("Indicators","pulse","Pulsation",true);choice("Indicators","labels","Arrow labels","Both",{"Off","Name","Distance","Both"});toggle("Indicators","nearby","Nearby nameplates",false);range("Indicators","reach","Tracking range (studs)",800,50,2500)
+toggle("Cursor","cursor","Custom game pointer",false);choice("Cursor","cursorShape","Pointer shape","Rounded Triangle",{"Rounded Triangle","Soft Arrow","Diamond","Orbit","Spark","Chevron","Neon Pointer","Arrowhead","Split Arrow","Needle","Crystal","Spear","Star Pointer","Compass","Crosshair","Heart","Image"});range("Cursor","cursorSize","Pointer size",30,12,72);range("Cursor","cursorGlow","Pointer glow %",55,0,100);choice("Cursor","cursorPalette","Desktop AETHER palette","Aurora",{"Aurora","Sunset","Ocean","Rainbow","Mono","Custom"});range("Cursor","hotX","Hotspot X %",19,0,100);range("Cursor","hotY","Hotspot Y %",8,0,100);color("Cursor","cursorA","Gradient start","BA99FF");color("Cursor","cursorB","Gradient end","69D9FA");toggle("Cursor","cursorRainbow","Rainbow pointer",true);range("Cursor","cursorSpeed","Gradient speed %",65,10,200);choice("Cursor","cursorAnimation","Cursor animation","Sway",{"Off","Breathe","Sway","Spin","Pulse"});range("Cursor","cursorMotionSpeed","Animation speed %",100,20,200);toggle("Cursor","cursorTrail","Cursor motion trail",false);choice("Cursor","cursorTrailStyle","Trail style","Triple",{"Triple","Single","Dots"});range("Cursor","cursorTrailLength","Trail lifetime (ms)",220,80,450);range("Cursor","cursorTrailWidth","Trail width (tenths of px)",12,5,35);range("Cursor","cursorTrailSpread","Trail spacing (px)",6,2,16);range("Cursor","cursorTrailGlow","Trail glow %",65,0,100);color("Cursor","cursorTrailA","Trail start","F5E5FF");color("Cursor","cursorTrailB","Trail end","9B6BFF");range("Cursor","cursorOffsetX","Pointer offset X (px)",0,-120,120);range("Cursor","cursorOffsetY","Pointer offset Y (px)",0,-120,120);toggle("Cursor","cursorDebug","Show hotspot marker",false);def("Cursor","image","Roblox image asset ID","asset","")
+toggle("Camera","camera","Enable camera settings",false);choice("Camera","cameraMode","Camera mode","Follow",{"Follow","First Person","Orbit"});range("Camera","fov","Field of view",70,40,105);range("Camera","shoulder","Shoulder offset (tenths)",16,-35,35);range("Camera","cameraHeight","Height offset (tenths)",2,-10,35);range("Camera","radius","Orbit radius (studs)",9,4,24);range("Camera","orbitSpeed","Orbit rate (degrees/s)",18,-65,65);range("Camera","follow","Follow smoothing (ms)",140,0,750);toggle("Interaction","lock","Alt Lock · LeftAlt",false);choice("Interaction","lockReticle","Shift-lock reticle","Orbit",{"None","Dot","Ring","Orbit","Cross","Split Cross","Diamond","Triangle","Hexagon","Star","Corners","Compass","Double Ring","Petal"});range("Interaction","reticleSize","Reticle size (px)",28,12,64);range("Interaction","reticleStroke","Reticle thickness (px)",2,1,5);color("Interaction","reticleColor","Reticle color","C8A6FF");toggle("Interaction","reticleRainbow","Rainbow reticle",false);toggle("Interaction","reticleMotion","Reticle animation",true);range("Interaction","reticleSpeed","Reticle animation %",70,0,200);toggle("Interaction","reticleNeon","Neon reticle glow",true);range("Interaction","reticleGlow","Reticle glow intensity %",65,0,100);range("Interaction","reticleGlowRadius","Reticle glow radius (px)",4,1,8);toggle("Interaction","reticleGlowPulse","Pulsating glow",true)
+toggle("Interaction","inputOverlay","Show input overlay",false);toggle("Interaction","inputMouse","Show mouse buttons",true);range("Interaction","inputX","Input overlay X %",91,0,100);range("Interaction","inputY","Input overlay Y %",76,0,100);range("Interaction","inputScale","Input overlay size %",100,60,150);range("Interaction","inputOpacity","Input overlay opacity %",80,20,100);color("Interaction","inputColor","Pressed key color","BCA0FF");toggle("Interaction","wallhopHelper","Wallhop Helper",false);range("Interaction","wallhopX","Wallhop display X %",87,0,100);range("Interaction","wallhopY","Wallhop display Y %",42,0,100);range("Interaction","wallhopScale","Wallhop display size %",100,60,150);range("Interaction","wallhopOpacity","Wallhop display opacity %",90,20,100)
+choice("Fonts","font","Typeface","Gotham",S.fonts);choice("Fonts","weight","Weight","Bold",{"Regular","Medium","Bold","Heavy"});def("Fonts","fontAsset","Optional Roblox font family ID","asset","");text("Fonts","sample","Preview text","AETHER · Your interface",96);range("Fonts","fontSize","HUD type scale %",100,70,145);toggle("Fonts","fontGradient","Gradient lettering",true);range("Fonts","fontOutline","Text outline %",24,0,100);range("Fonts","fontGlow","Letter glow %",35,0,100);color("Fonts","fontA","Letter color","F1E6FF");color("Fonts","fontB","Letter gradient","CCA4FF")
+S.example='hud.widget("status", "Ready", 8, 38)\nfunction onHealthChanged(hp, maxHP)\n  hud.widget("status", hud.join("HP: ", hp), 8, 38)\n  if hp > 0 and hp <= maxHP * 0.3 then\n    hud.animate("status", "pulse")\n  else\n    hud.animate("status", "none")\n  end\nend'
+text("Scripts","cue","HUD script",S.example,8192);text("Scripts","luau","Luau draft",'-- ModuleScript for your own place\nreturn function(humanoid: Humanoid)\n  return humanoid.HealthChanged:Connect(function(hp)\n    print(hp, humanoid.MaxHealth)\n  end)\nend',8192)
+S.defs.players={group="Indicators",kind="players",default={}};table.insert(S.order,"players")
+function S.copy(v) if type(v)~="table" then return v end;local r={};for k,x in v do r[k]=S.copy(x) end;return r end
+local function str(s,n) return type(s)=="string" and #s<=n and utf8.len(s)~=nil end
+local function name(s) return str(s,48) and s:match("%S") and not s:find("%c") end
+local function hex(s) return type(s)=="string" and #s==6 and s:match("^%x+$")~=nil end
+function S.value(k,v)
+ local d=S.defs[k];if not d then error("Unknown setting: "..tostring(k),0) end
+ local a=d.kind
+ if a=="bool" and type(v)=="boolean" then return v end
+ if a=="number" and type(v)=="number" and v==math.floor(v) and v>=d.min and v<=d.max then return v end
+ if a=="choice" and table.find(d.min,v) then return v end
+ if a=="color" and hex(v) then return string.upper(v) end
+ if a=="text" and str(v,d.max) then return v end
+ if a=="asset" and str(v,16) and (v=="" or v:match("^[1-9]%d*$")) then return v end
+ if a=="players" and type(v)=="table" then local r,n={},0;for id,o in v do
+   n+=1;assert(n<=16 and str(id,18) and id:match("^%-?%d+$") and type(o)=="table" and str(o.label,32) and hex(o.color) and table.find(S.shapes,o.shape),"Invalid player override");r[id]={label=o.label,color=o.color,shape=o.shape}
+  end;return r end
+ error("Invalid value: "..k,0)
+end
+function S.defaults() local r={};for k,d in S.defs do r[k]=S.copy(d.default) end;return r end
+function S.settings(v,group)
+ assert(type(v)=="table","Expected settings");local r=if group then {} else S.defaults();local count=0
+ for k,x in v do local d=S.defs[k];assert(d and (not group or d.group==group),"Unexpected setting");r[k]=S.value(k,x);count+=1 end
+ if group then assert(count>0,"Empty asset") end;return r
+end
+function S.capture(settings,group) local r={};for k,d in S.defs do if d.group==group then r[k]=S.copy(settings[k]) end end;return r end
+function S.asset(v) assert(type(v)=="table" and v.version==1 and name(v.name) and table.find(S.kinds,v.kind),"Invalid AETHER asset");return {version=1,name=v.name,kind=v.kind,data=S.settings(v.data,v.kind)} end
+function S.blank() return {version=1,settings=S.defaults(),profiles={},assets={}} end
+function S.bank(v)
+ assert(type(v)=="table" and v.version==1,"Unsupported bank version");local r=S.blank();r.settings=S.settings(v.settings)
+ local n=0;assert(type(v.profiles)=="table" and type(v.assets)=="table","Invalid library");for k,x in v.profiles do n+=1;assert(n<=10 and name(k),"Invalid profile name/count");r.profiles[k]=S.settings(x) end
+ n=0;for k,x in v.assets do n+=1;assert(n<=40 and name(k),"Invalid asset name/count");r.assets[k]=S.asset(x);assert(k==r.assets[k].name,"Asset name mismatch") end;return r
+end
+for _,row in {
+ {"Amethyst Void","15102C","573B93","C1A5F9",58,72,20,70,-5,20,-15,35,10,22},
+ {"Glass Dawn","778ECA","E0AFE0","FFE7CA",18,42,63,115,6,-8,12,16,35,15},
+ {"Arctic Prism","132B56","7198DA","E7F4FF",35,55,122,109,-12,14,7,22,35,18},
+ {"Crimson Eclipse","1C0B22","762238","EF837F",43,70,185,70,28,28,-10,18,12,15},
+ {"Mint Dream","163B42","67B4A9","D7FFE8",24,50,145,105,-7,-10,10,15,28,22},
+ {"Rose Nebula","30152C","B6639E","FFD3E2",49,72,197,92,18,12,0,24,14,20},
+ {"Deep Space","03081A","202B6C","9EBBFF",25,46,0,52,-20,25,-24,12,0,5},
+ {"Soft Cinema","3C405C","BCA8A0","FFE9D6",20,35,155,96,-22,15,-5,8,18,33},
+ {"Electric Violet","160C37","7448E3","C4B1FF",33,85,225,90,35,32,2,35,7,15},
+ {"Pearl Mist","67718D","C2D7E7","FFF8EC",63,42,110,119,-26,-15,14,12,22,27},
+ {"Emerald Night","071E25","247B65","A6FFD1",37,60,13,78,21,18,-12,21,6,14},
+ {"Amber Horizon","442C35","DF8652","FFE0A6",26,56,176,114,14,12,8,22,45,20},
+ } do table.insert(S.skies,row) end
+function S.sky(row) return {ambient=true,skyA=row[2],skyB=row[3],skyC=row[4],fog=row[5],bloom=row[6],time=row[7],light=row[8],saturation=row[9],worldContrast=row[10] or 0,worldExposure=row[11] or 0,worldGlare=row[12] or 0,worldRays=row[13] or 0,worldFocus=row[14] or 0,worldFocusDistance=60,worldBloomSize=26} end
+S.presets={Theme={Violet={accent="A68AFF",secondary="FF89C7",glassColor="211C35"},Ocean={accent="68CEF4",secondary="9B91FF",glassColor="112636"},Rose={accent="F699C6",secondary="D8A5FF",glassColor="301B31"}},HUD={Classic={hpX=82,hpY=13,clockX=3,clockY=93,compact=false},Broadcast={hpX=3,hpY=78,clockX=95,clockY=5,hpScale=115},Compact={compact=true,hpX=96,hpY=16,hpScale=80}},Motion={Calm={speed=70,duration=520},Swift={speed=155,duration=150},Still={reduce=true}},Wings={Seraph={wings=true,wingStyle="Seraph",wingSpan=115},Blade={wings=true,wingStyle="Blade",wingColor="76E3FF"},Sylph={wings=true,wingStyle="Sylph",wingRainbow=true}},Halos={Crown={halo=true,haloStyle="Crown"},Binary={halo=true,haloStyle="Binary",haloColor="82D9FF"}},Character={Comet={aura=true,trail=true,auraColor="AA89FE"}},Neon={Pulse={neon=true,neonRainbow=true,neonLight=65}},Cursor={Aurora={cursor=true,cursorShape="Rounded Triangle",cursorRainbow=true},Diamond={cursor=true,cursorShape="Diamond",hotX=50,hotY=50}},Camera={Portrait={camera=true,cameraMode="Orbit",fov=55,radius=8,lock=false},Shoulder={camera=true,cameraMode="Follow",lock=true}},Fonts={Terminal={font="Code",weight="Bold",fontAsset="",fontGradient=false},Soft={font="FredokaOne",weight="Regular",fontAsset=""}},Indicators={},Ambient={},Scripts={Vitals={cue=S.example}}}
+for _,v in S.shapes do S.presets.Indicators[v]={shape=v,indicators=true} end
+for _,v in S.defs.neonMotion.min do S.presets.Neon[v]={neon=true,neonMotion=v,neonRainbow=(v=="Aurora")} end
+S.presets.HUD.GlassMotion={hudMotion="Glass",hudMotionStrength=65,hudShine=true,hudReaction=true}
+S.presets.HUD.FloatMotion={hudMotion="Float",hudMotionStrength=75,hudShine=true,hudReaction=true}
+S.presets.HUD.PulseMotion={hudMotion="Pulse",hudMotionStrength=80,hudShine=true,hudReaction=true}
+S.presets.HUD.SilkyMotion={hudMotion="Glass",hudMotionStrength=70,hudSmoothness=420,hudShine=true,hudReaction=true,reduce=false}
+S.presets.Motion.HighRefresh={speed=100,duration=380,ease="Smooth",menuTransition="Glass",tabTransition=true,navGlow=true,reduce=false}
+S.presets.Motion.Glass={menuTransition="Glass",menuAnimStrength=75,tabTransition=true,navGlow=true,reduce=false}
+S.presets.Motion.Slide={menuTransition="Slide",menuAnimStrength=85,tabTransition=true,navGlow=true,reduce=false}
+S.presets.Motion.Minimal={menuTransition="Fade",menuAnimStrength=30,tabTransition=false,navGlow=false,reduce=false}
+S.presets.Character.NaturalWalk={walkAnimation=true,walkStyle="Natural",walkIntensity=65}
+S.presets.Character.HeroicWalk={walkAnimation=true,walkStyle="Heroic",walkIntensity=80}
+S.presets.Character.FloatWalk={walkAnimation=true,walkStyle="Floating",walkIntensity=60}
+S.presets.Character.GracefulGlide={walkAnimation=true,walkStyle="Glide",walkIntensity=68}
+S.presets.Character.EtherealHover={walkAnimation=true,walkStyle="Ethereal",walkIntensity=78}
+-- Twelve new original locomotion interpretations inspired by Roblox avatar packs.
+for _,name in {"Toy","Robot","Ninja","Bubbly","Stylish","Mage","Levitation",
+ "Oldschool","Vampire","Astronaut","Zombie","Cartoony"} do
+ S.presets.Character[name.." Inspired"]={walkAnimation=true,walkStyle=name,walkIntensity=80}
+end
+-- UGC-inspired styles: original procedural interpretation, no paid clips copied.
+for _,name in {"Angel Glide","Bat Swoop","Mermaid Drift","Serpent Slither","Cartwheel Flow","Rubberhose","Dream Sleep","Plushie","Cat Paws","Shy Kawaii","Gymnast","Skip Hop","Reindeer Prance","Fighter","Harpy Glide","Godly Aura","Wavy Expressive","Retro Zombie","Tsundere","Doll Walk","Skater","Little Duck","Floating Head","Dark Aura","Anime Hero","Headless Float"} do
+ S.presets.Character[name]={walkAnimation=true,walkStyle=name,walkIntensity=75}
+end
+for _,v in S.defs.wingStyle.min do S.presets.Wings[v]={wings=true,wingStyle=v} end
+for _,v in S.defs.haloStyle.min do S.presets.Halos[v]={halo=true,haloStyle=v} end
+for _,v in S.skies do S.presets.Ambient[v[1]]=S.sky(v) end
+return S

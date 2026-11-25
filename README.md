@@ -1,5 +1,5 @@
 # aethet-dolboeb
 
-Independent copy of the AETHER visual customization project, based on V12.12.
+Independent AETHER V12.12 visual customization project.
 
-Original repository: https://github.com/0wertyx/AETHER-Luau
+Original: https://github.com/0wertyx/AETHER-Luau
