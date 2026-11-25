@@ -1,4 +1,4 @@
--- Isolated volleyball practice scene. No live-game ball, player, camera or input hooks.
+-- Independent volleyball practice scene; optional world display in a developer-configured place.
 local U=require(script.Parent.Util)
 local Run=game:GetService("RunService")
 local M={}
@@ -23,13 +23,24 @@ local function part(parent,name,size,pos,color,shape)
 end
 function M.mount(ui,a)
  local page=ui.page
- ui:note("TRAINING ONLY · isolated court. Aim Assist rotates the practice dummy, not your real character or camera.",42)
+ ui:note("VOLLEYBALL PRACTICE · Preview or show your own practice court in the world. Auto turn controls the practice dummy.",42)
  local host=ui:row(300,"AimPractice")
  local vp=U.new("ViewportFrame",{Name="PracticeCourt",Size=UDim2.fromScale(1,1),BackgroundColor3=Color3.fromRGB(19,17,33),BorderSizePixel=0,Ambient=Color3.fromRGB(175,175,205),LightColor=Color3.fromRGB(245,233,255),LightDirection=Vector3.new(-1,-1,-1)},host)
  U.corner(vp,10)
  local world=U.new("WorldModel",{},vp)
  local camera=U.new("Camera",{FieldOfView=44,CFrame=CFrame.lookAt(Vector3.new(24,25,29),Vector3.new(0,0,0))},vp)
  vp.CurrentCamera=camera
+ local function fitCamera()
+  local size=vp.AbsoluteSize
+  if size.X<2 or size.Y<2 then return end
+  local halfV=math.rad(camera.FieldOfView*.5)
+  local halfH=math.atan(math.tan(halfV)*size.X/size.Y)
+  local distance=17.5/math.sin(math.min(halfV,halfH))*1.06
+  local focus=Vector3.new(0,2,0)
+  camera.CFrame=CFrame.lookAt(focus+Vector3.new(24,23,29).Unit*distance,focus)
+ end
+ page:on(vp:GetPropertyChangedSignal("AbsoluteSize"),fitCamera)
+ fitCamera()
  local court=part(world,"Court",Vector3.new(16,.2,28),Vector3.new(0,-.1,0),Color3.fromRGB(61,48,90))
  local white=Color3.fromRGB(205,193,232)
  for _,x in {-7.8,7.8} do part(world,"Sideline",Vector3.new(.08,.04,28),Vector3.new(x,.03,0),white) end
@@ -60,30 +71,69 @@ function M.mount(ui,a)
  local hitTime=0
  local predicted=origin
  local status=ui:note("",40)
+ local lastAimKey=nil
+ local worldModel=nil
+ local worldAnchor=nil
+ local mirrors={}
+ local worldStatus=nil
+ local function hideWorld()
+  if worldModel then worldModel:Destroy() end
+  worldModel=nil;worldAnchor=nil;table.clear(mirrors)
+ end
+ page:add(hideWorld)
+ local function showWorld()
+  hideWorld()
+  local anchor=workspace:FindFirstChild("AETHERPracticeOrigin")
+  if not anchor or not anchor:IsA("BasePart") or (not Run:IsStudio() and anchor:GetAttribute("AETHERPracticeEnabled")~=true) then
+   worldStatus.Text="Create AETHERPracticeOrigin in your place. In a published place enable its AETHERPracticeEnabled attribute."
+   return
+  end
+  worldAnchor=anchor
+  worldModel=U.new("Model",{Name="AETHERPracticeCourt"},workspace)
+  for _,source in world:GetDescendants() do
+   if source:IsA("BasePart") then
+    local clone=source:Clone()
+    clone.CFrame=anchor.CFrame*source.CFrame
+    clone.Parent=worldModel
+    mirrors[source]=clone
+   end
+  end
+  worldStatus.Text="World court visible at AETHERPracticeOrigin."
+ end
  ui:chips({"Left","Center","Right"},function(n)
   a:set("aimPracticeZone",n);launched=false;elapsed=0;ball.Position=origin
  end,3,function() return a.s.aimPracticeZone end)
- ui:group("Aim Helper",{aimPracticeZone=true})
  local function reset()
   launched=false;elapsed=0;ball.Position=origin
  end
  local function parameters()
   local st=a.s
-  local goal=zones[st.aimPracticeZone]
+  local goal=zones[st.aimPracticeZone] or zones.Center
   local delta=goal-origin
   local range=Vector3.new(delta.X,0,delta.Z).Magnitude
   return st,goal,range,math.atan2(delta.X,-delta.Z)
  end
+ local function aimKey(st)
+  return tostring(st.aimPracticeZone)..":"..tostring(st.aimPracticeAuto)..":"..(if st.aimPracticeAuto then "auto" else tostring(st.aimPracticeAngle))
+ end
  ui:chips({"Hit practice ball","Reset"},function(n)
   if n=="Reset" then reset();return end
   local st,goal,range,desired=parameters()
-  if st.aimPracticeAuto then yaw=desired end
+  lastAimKey=aimKey(st)
+  yaw=if st.aimPracticeAuto then desired else math.rad(st.aimPracticeAngle)
   vel=shot(yaw,range);predicted,hitTime=landing(origin,vel)
   launched=true;elapsed=0;ball.Position=origin
  end,2)
+ worldStatus=ui:note("Optional: place a BasePart named AETHERPracticeOrigin in your own Roblox place.",44)
+ ui:chips({"Show world court","Hide world court"},function(n)
+  if n=="Show world court" then showWorld() else hideWorld();worldStatus.Text="World court hidden." end
+ end,2)
+ ui:group("Aim Helper",{aimPracticeZone=true})
  local function tick(dt)
   if page.dead or not vp.Parent then return end
   local st,goal,range,desired=parameters()
+  local key=aimKey(st)
+  if lastAimKey~=key then reset();lastAimKey=key end
   if not launched then
    if st.aimPracticeAuto then yaw+=angleDiff(yaw,desired)*(1-math.exp(-dt*st.aimPracticeTurn/10))
    else yaw=math.rad(st.aimPracticeAngle) end
@@ -98,11 +148,22 @@ function M.mount(ui,a)
   marker.Size=Vector3.new(.06,st.aimPracticeSize/50,st.aimPracticeSize/50)
   marker.CFrame=CFrame.new(predicted.X,.06,predicted.Z)*CFrame.Angles(0,0,math.pi/2)
   marker.Color=color;marker.Transparency=if st.aimPracticeMarker then 1-st.aimPracticeOpacity/100 else 1
-  target.CFrame=CFrame.new(goal.X,.05,goal.Z)*CFrame.Angles(0,0,math.pi/2)
+  target.CFrame=CFrame.new(goal.X,.12,goal.Z)*CFrame.Angles(0,0,math.pi/2)
   for j,dot in trail do
    local t=hitTime*j/(#trail+1)
    dot.Position=origin+vel*t-Vector3.new(0,.5*gravity*t^2,0)
    dot.Color=color;dot.Transparency=if st.aimPracticeTrail then .2 else 1
+  end
+  if worldModel then
+   if not worldAnchor or not worldAnchor:IsDescendantOf(workspace) then
+    hideWorld();worldStatus.Text="Practice origin removed; world court hidden."
+   else
+    local transform=worldAnchor.CFrame
+    for source,clone in mirrors do
+     clone.CFrame=transform*source.CFrame
+     clone.Size=source.Size;clone.Color=source.Color;clone.Transparency=source.Transparency
+    end
+   end
   end
   local error=(Vector3.new(predicted.X,0,predicted.Z)-Vector3.new(goal.X,0,goal.Z)).Magnitude
   status.Text=string.format("%s  /  %s\nLanding: %.1f, %.1f  ·  Target error: %.2f",if launched then (if elapsed>=hitTime then "LANDED" else "IN FLIGHT") else "READY",if st.aimPracticeAuto then "AUTO TURN" else "MANUAL",predicted.X,predicted.Z,error)
