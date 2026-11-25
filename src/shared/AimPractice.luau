@@ -1,6 +1,7 @@
 -- Independent volleyball practice scene; optional world display in a developer-configured place.
 local U=require(script.Parent.Util)
 local Run=game:GetService("RunService")
+local Collection=game:GetService("CollectionService")
 local M={}
 local origin=Vector3.new(0,3,9)
 local gravity=18
@@ -55,6 +56,8 @@ function M.mount(ui,a)
  arrow.Material=Enum.Material.Neon
  dummy.PrimaryPart=base
  local ball=part(world,"PracticeBall",Vector3.one*(ballRadius*2),origin,Color3.fromRGB(255,232,156),Enum.PartType.Ball)
+ local ballHalo=part(world,"BallFollowMarker",Vector3.new(.035,1.55,1.55),origin,Color3.fromRGB(130,225,255),Enum.PartType.Cylinder)
+ ballHalo.Material=Enum.Material.Neon
  local marker=part(world,"PredictedLanding",Vector3.new(.06,1.6,1.6),Vector3.zero,Color3.fromRGB(130,225,255),Enum.PartType.Cylinder)
  marker.Material=Enum.Material.Neon
  local target=part(world,"SelectedTarget",Vector3.new(.04,.7,.7),Vector3.zero,Color3.fromRGB(255,205,117),Enum.PartType.Cylinder)
@@ -76,6 +79,49 @@ function M.mount(ui,a)
  local worldAnchor=nil
  local mirrors={}
  local worldStatus=nil
+ local follow=true
+ local liveEnabled=false
+ local liveMarks={}
+ local liveStatus=nil
+ local liveTag="AETHERPracticeBall"
+ local function removeLive(obj)
+  local visual=liveMarks[obj]
+  if visual then visual:Destroy();liveMarks[obj]=nil end
+ end
+ local function clearLive()
+  for obj,visual in liveMarks do visual:Destroy() end
+  table.clear(liveMarks)
+ end
+ local function updateLive()
+  if not liveEnabled then return end
+  local allow=Run:IsStudio() or workspace:GetAttribute("AETHERPracticeEnabled")==true
+  if not allow then
+   clearLive()
+   liveStatus.Text="Enable AETHERPracticeEnabled on Workspace in your own place."
+   return
+  end
+  for obj,visual in liveMarks do
+   if not obj:IsDescendantOf(workspace) or not Collection:HasTag(obj,liveTag) or visual.Parent~=obj then removeLive(obj) end
+  end
+  local count=0
+  for _,obj in Collection:GetTagged(liveTag) do
+   if obj:IsA("BasePart") and obj:IsDescendantOf(workspace) then
+    local visual=liveMarks[obj]
+    if not visual then
+     visual=U.new("Highlight",{Name="AETHERBallFollow",Adornee=obj,DepthMode=Enum.HighlightDepthMode.Occluded,FillTransparency=.83,OutlineTransparency=.05},obj)
+     liveMarks[obj]=visual
+    end
+    visual.Enabled=follow
+    visual.OutlineColor=U.hex(a.s.aimPracticeColor)
+    visual.FillColor=visual.OutlineColor
+    count+=1
+   end
+  end
+  liveStatus.Text=if count>0 then "Ball bound: "..tostring(count) else "Waiting for a BasePart tagged AETHERPracticeBall."
+ end
+ page:add(clearLive)
+ page:on(Collection:GetInstanceAddedSignal(liveTag),function() if liveEnabled then updateLive() end end)
+ page:on(Collection:GetInstanceRemovedSignal(liveTag),function(obj) removeLive(obj);if liveEnabled then updateLive() end end)
  local function hideWorld()
   if worldModel then worldModel:Destroy() end
   worldModel=nil;worldAnchor=nil;table.clear(mirrors)
@@ -128,7 +174,15 @@ function M.mount(ui,a)
  ui:chips({"Show world court","Hide world court"},function(n)
   if n=="Show world court" then showWorld() else hideWorld();worldStatus.Text="World court hidden." end
  end,2)
+ liveStatus=ui:note("Ball Follow · follows the practice ball. For your own game tag its ball AETHERPracticeBall.",44)
+ ui:chips({"Ball follow ON/OFF","Bind tagged ball","Unbind ball"},function(n)
+  if n=="Ball follow ON/OFF" then follow=not follow
+  elseif n=="Bind tagged ball" then liveEnabled=true
+  else liveEnabled=false;clearLive() end
+  if liveEnabled then updateLive() else liveStatus.Text=if follow then "Practice ball marker ON." else "Practice ball marker OFF." end
+ end,1)
  ui:group("Aim Helper",{aimPracticeZone=true})
+ local liveClock=0
  local function tick(dt)
   if page.dead or not vp.Parent then return end
   local st,goal,range,desired=parameters()
@@ -145,6 +199,13 @@ function M.mount(ui,a)
    ball.Position=origin+vel*elapsed-Vector3.new(0,.5*gravity*elapsed^2,0)
   else ball.Position=origin end
   local color=U.hex(st.aimPracticeColor)
+  local followSize=math.max(ball.Size.X,ball.Size.Y,ball.Size.Z)+.5
+  ballHalo.Size=Vector3.new(.035,followSize,followSize)
+  ballHalo.CFrame=CFrame.new(ball.Position-Vector3.new(0,ballRadius*.65,0))*CFrame.Angles(0,0,math.pi/2)
+  ballHalo.Color=color
+  ballHalo.Transparency=if follow then .16 else 1
+  liveClock+=dt
+  if liveEnabled and liveClock>=.25 then liveClock=0;updateLive() end
   marker.Size=Vector3.new(.06,st.aimPracticeSize/50,st.aimPracticeSize/50)
   marker.CFrame=CFrame.new(predicted.X,.06,predicted.Z)*CFrame.Angles(0,0,math.pi/2)
   marker.Color=color;marker.Transparency=if st.aimPracticeMarker then 1-st.aimPracticeOpacity/100 else 1
