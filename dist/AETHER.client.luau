@@ -20,6 +20,125 @@ local function __aether_require(name)
 end
 
 
+-- BEGIN MODULE AimPractice
+__aether_factories["AimPractice"] = function()
+-- Isolated volleyball practice scene. No live-game ball, player, camera or input hooks.
+local U=__aether_require("Util")
+local Run=game:GetService("RunService")
+local M={}
+local origin=Vector3.new(0,3,9)
+local gravity=18
+local ballRadius=.45
+local flight=1.65
+local zones={Left=Vector3.new(-5,ballRadius,-8),Center=Vector3.new(0,ballRadius,-10),Right=Vector3.new(5,ballRadius,-8)}
+local function landing(pos,vel)
+ local height=pos.Y-ballRadius
+ local t=(vel.Y+math.sqrt(math.max(0,vel.Y^2+2*gravity*height)))/gravity
+ return Vector3.new(pos.X+vel.X*t,ballRadius,pos.Z+vel.Z*t),t
+end
+local function shot(yaw,range)
+ local direction=Vector3.new(math.sin(yaw),0,-math.cos(yaw))
+ local vy=(ballRadius-origin.Y+.5*gravity*flight^2)/flight
+ return direction*(range/flight)+Vector3.new(0,vy,0)
+end
+local function angleDiff(a,b) return math.atan2(math.sin(b-a),math.cos(b-a)) end
+local function part(parent,name,size,pos,color,shape)
+ return U.new("Part",{Name=name,Size=size,CFrame=CFrame.new(pos),Color=color,Material=Enum.Material.SmoothPlastic,Shape=shape or Enum.PartType.Block,Anchored=true,CanCollide=false,CanTouch=false,CanQuery=false,CastShadow=false},parent)
+end
+function M.mount(ui,a)
+ local page=ui.page
+ ui:note("TRAINING ONLY · isolated court. Aim Assist rotates the practice dummy, not your real character or camera.",42)
+ local host=ui:row(300,"AimPractice")
+ local vp=U.new("ViewportFrame",{Name="PracticeCourt",Size=UDim2.fromScale(1,1),BackgroundColor3=Color3.fromRGB(19,17,33),BorderSizePixel=0,Ambient=Color3.fromRGB(175,175,205),LightColor=Color3.fromRGB(245,233,255),LightDirection=Vector3.new(-1,-1,-1)},host)
+ U.corner(vp,10)
+ local world=U.new("WorldModel",{},vp)
+ local camera=U.new("Camera",{FieldOfView=44,CFrame=CFrame.lookAt(Vector3.new(24,25,29),Vector3.new(0,0,0))},vp)
+ vp.CurrentCamera=camera
+ local court=part(world,"Court",Vector3.new(16,.2,28),Vector3.new(0,-.1,0),Color3.fromRGB(61,48,90))
+ local white=Color3.fromRGB(205,193,232)
+ for _,x in {-7.8,7.8} do part(world,"Sideline",Vector3.new(.08,.04,28),Vector3.new(x,.03,0),white) end
+ for _,z in {-13.9,0,13.9} do part(world,"CourtLine",Vector3.new(16,.04,.08),Vector3.new(0,.03,z),white) end
+ for _,x in {-8.1,8.1} do part(world,"NetPost",Vector3.new(.16,3.7,.16),Vector3.new(x,1.85,0),white) end
+ local net=part(world,"Net",Vector3.new(16,1.1,.05),Vector3.new(0,2.9,0),white);net.Transparency=.65
+ local top=part(world,"NetTop",Vector3.new(16,.09,.12),Vector3.new(0,3.45,0),white)
+ local dummy=U.new("Model",{Name="PracticeDummy"},world)
+ local base=part(dummy,"Body",Vector3.new(1.05,1.5,.65),Vector3.new(0,1.15,9),Color3.fromRGB(165,128,244))
+ local head=part(dummy,"Head",Vector3.new(.78,.78,.78),Vector3.new(0,2.3,9),Color3.fromRGB(228,213,255),Enum.PartType.Ball)
+ local arrow=part(dummy,"Facing",Vector3.new(.22,.14,1.8),Vector3.new(0,.3,7.7),Color3.fromRGB(255,211,126))
+ arrow.Material=Enum.Material.Neon
+ dummy.PrimaryPart=base
+ local ball=part(world,"PracticeBall",Vector3.one*(ballRadius*2),origin,Color3.fromRGB(255,232,156),Enum.PartType.Ball)
+ local marker=part(world,"PredictedLanding",Vector3.new(.06,1.6,1.6),Vector3.zero,Color3.fromRGB(130,225,255),Enum.PartType.Cylinder)
+ marker.Material=Enum.Material.Neon
+ local target=part(world,"SelectedTarget",Vector3.new(.04,.7,.7),Vector3.zero,Color3.fromRGB(255,205,117),Enum.PartType.Cylinder)
+ target.Material=Enum.Material.Neon
+ local trail={}
+ for j=1,24 do
+  local dot=part(world,"TrajectoryPoint",Vector3.one*.13,origin,Color3.fromRGB(191,155,255),Enum.PartType.Ball)
+  dot.Material=Enum.Material.Neon;trail[j]=dot
+ end
+ local yaw=0
+ local launched=false
+ local elapsed=0
+ local vel=Vector3.zero
+ local hitTime=0
+ local predicted=origin
+ local status=ui:note("",40)
+ ui:chips({"Left","Center","Right"},function(n)
+  a:set("aimPracticeZone",n);launched=false;elapsed=0;ball.Position=origin
+ end,3,function() return a.s.aimPracticeZone end)
+ ui:group("Aim Helper",{aimPracticeZone=true})
+ local function reset()
+  launched=false;elapsed=0;ball.Position=origin
+ end
+ local function parameters()
+  local st=a.s
+  local goal=zones[st.aimPracticeZone]
+  local delta=goal-origin
+  local range=Vector3.new(delta.X,0,delta.Z).Magnitude
+  return st,goal,range,math.atan2(delta.X,-delta.Z)
+ end
+ ui:chips({"Hit practice ball","Reset"},function(n)
+  if n=="Reset" then reset();return end
+  local st,goal,range,desired=parameters()
+  if st.aimPracticeAuto then yaw=desired end
+  vel=shot(yaw,range);predicted,hitTime=landing(origin,vel)
+  launched=true;elapsed=0;ball.Position=origin
+ end,2)
+ local function tick(dt)
+  if page.dead or not vp.Parent then return end
+  local st,goal,range,desired=parameters()
+  if not launched then
+   if st.aimPracticeAuto then yaw+=angleDiff(yaw,desired)*(1-math.exp(-dt*st.aimPracticeTurn/10))
+   else yaw=math.rad(st.aimPracticeAngle) end
+   vel=shot(yaw,range);predicted,hitTime=landing(origin,vel)
+  end
+  dummy:PivotTo(CFrame.lookAt(Vector3.new(0,1.15,9),Vector3.new(math.sin(yaw),1.15,9-math.cos(yaw))))
+  if launched then
+   elapsed=math.min(elapsed+dt*st.aimPracticeSpeed/100,hitTime)
+   ball.Position=origin+vel*elapsed-Vector3.new(0,.5*gravity*elapsed^2,0)
+  else ball.Position=origin end
+  local color=U.hex(st.aimPracticeColor)
+  marker.Size=Vector3.new(.06,st.aimPracticeSize/50,st.aimPracticeSize/50)
+  marker.CFrame=CFrame.new(predicted.X,.06,predicted.Z)*CFrame.Angles(0,0,math.pi/2)
+  marker.Color=color;marker.Transparency=if st.aimPracticeMarker then 1-st.aimPracticeOpacity/100 else 1
+  target.CFrame=CFrame.new(goal.X,.05,goal.Z)*CFrame.Angles(0,0,math.pi/2)
+  for j,dot in trail do
+   local t=hitTime*j/(#trail+1)
+   dot.Position=origin+vel*t-Vector3.new(0,.5*gravity*t^2,0)
+   dot.Color=color;dot.Transparency=if st.aimPracticeTrail then .2 else 1
+  end
+  local error=(Vector3.new(predicted.X,0,predicted.Z)-Vector3.new(goal.X,0,goal.Z)).Magnitude
+  status.Text=string.format("%s  /  %s\nLanding: %.1f, %.1f  ·  Target error: %.2f",if launched then (if elapsed>=hitTime then "LANDED" else "IN FLIGHT") else "READY",if st.aimPracticeAuto then "AUTO TURN" else "MANUAL",predicted.X,predicted.Z,error)
+ end
+ tick(0)
+ page:on(Run.RenderStepped,function(dt) tick(math.min(dt,.1)) end)
+end
+return M
+end
+-- END MODULE AimPractice
+
+
 -- BEGIN MODULE Avatar
 __aether_factories["Avatar"] = function()
 local U=__aether_require("Util")
@@ -951,7 +1070,7 @@ function UI.new(app,gui,scope)
  self.place=U.label(self.panel,"PLACE  /  "..tostring(game.PlaceId),10,nil,nil);self.place.TextColor3=dim
  self.nav=U.new("ScrollingFrame",{Name="Navigation",BackgroundTransparency=1,BorderSizePixel=0,CanvasSize=UDim2.new(),AutomaticCanvasSize=Enum.AutomaticSize.Y,ScrollBarThickness=3},self.panel);self.navList=U.new("UIListLayout",{Padding=UDim.new(0,4),SortOrder=Enum.SortOrder.LayoutOrder},self.nav)
  self.pageBox=U.new("Frame",{Name="PageArea",BackgroundTransparency=1,BorderSizePixel=0,ClipsDescendants=true},self.panel);self.status=U.label(self.panel,"",11,UDim2.new(0,16,1,-28),UDim2.new(1,-32,0,22));self.status.TextColor3=dim
- self.buttons={};for i,name in {"Dashboard","HUD","Character","Wings","Halos","Neon","Ambient","Indicators","Cursor","Camera","Interaction","Fonts","Simulator","Scripts","Profiles","Updates","List","Diagnostics"} do local b=U.button(self.nav,name);b.Name=name;b.LayoutOrder=i;self.buttons[name]=b;self.icons[name]=Icons.new(b,name);scope:on(b.Activated,function() self:open(name) end);scope:on(b.MouseEnter,function() self.navHover[name]=true end);scope:on(b.MouseLeave,function() self.navHover[name]=false end) end
+ self.buttons={};for i,name in {"Dashboard","HUD","Character","Wings","Halos","Neon","Ambient","Indicators","Cursor","Camera","Interaction","Fonts","Simulator","Aim Helper","Scripts","Profiles","Updates","List","Diagnostics"} do local b=U.button(self.nav,name);b.Name=name;b.LayoutOrder=i;self.buttons[name]=b;self.icons[name]=Icons.new(b,name);scope:on(b.Activated,function() self:open(name) end);scope:on(b.MouseEnter,function() self.navHover[name]=true end);scope:on(b.MouseLeave,function() self.navHover[name]=false end) end
  function self:layout()
   local sz=self.stage.AbsoluteSize
   if sz.X<2 or sz.Y<2 then return end
@@ -2224,7 +2343,7 @@ I.tabs={
  Dashboard="Dashboard",HUD="HUD",Character="Profile",Wings="Favorites",
  Halos="AI_Assistant",Neon="Themes",Ambient="World_FX",Indicators="Indicators",
  Cursor="Assets",Camera="Media",Interaction="Games",List="Update",Fonts="Fonts",Simulator="Simulator",
- Scripts="Console",Profiles="Cloud",Diagnostics="Debug"
+ ["Aim Helper"]="Simulator",Scripts="Console",Profiles="Cloud",Diagnostics="Debug"
 }
 -- Procedural silhouettes supply HD textures and offline line-art fallback.
 -- Coordinates are normalized to a 24 by 24 icon, independent of display size.
@@ -3567,6 +3686,7 @@ local U=__aether_require("Util");local S=__aether_require("Schema");local Motion
 local WalkMotion=__aether_require("WalkMotion")
 local PreviewProps=__aether_require("PreviewProps")
 local MotionStudio=__aether_require("MotionStudio")
+local AimPractice=__aether_require("AimPractice")
 local Input=game:GetService("UserInputService")
 local E={}
 local function names(t) local a=U.keys(t);return a end
@@ -4211,6 +4331,7 @@ function E.render(a,tab,ui)
   for _,k in {"wallhopHelper","wallhopX","wallhopY","wallhopScale","wallhopOpacity"} do ui:control(k) end
  elseif tab=="Fonts" then local text=ui:note(a.s.sample,62);text:SetAttribute("AETHERKeepFontColor",true);text.TextXAlignment=Enum.TextXAlignment.Center;local gradient=U.gradient(text,Color3.new(),Color3.new(),10);local glow=U.stroke(text,U.hex(a.s.fontB),.8);glow.ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual;ui:watch(function() local s=a.s;text.Text=s.sample;text.FontFace=U.font(s);text.TextSize=s.fontSize*.23;text.TextColor3=if s.fontGradient then Color3.new(1,1,1) else U.hex(s.fontA);text.TextStrokeTransparency=1-s.fontOutline/100;gradient.Enabled=s.fontGradient;gradient.Color=ColorSequence.new(U.hex(s.fontA),U.hex(s.fontB));glow.Color=U.hex(s.fontB);glow.Transparency=1-s.fontGlow*.008;glow.Thickness=1+s.fontGlow*.023 end);local query=ui:box("Search native typefaces",a.fontQuery or "",32,function(q) if q~=(a.fontQuery or "") then a.fontQuery=q;ui:open("Fonts") end end);local fonts={};for _,n in S.fonts do if n:lower():find((a.fontQuery or ""):lower(),1,true) then table.insert(fonts,n) end end;ui:chips(fonts,function(n) a:patch({font=n,fontAsset=""}) end,3,function() return a.s.font end);ui:group(tab,{font=true});preset(ui,a,tab)
  elseif tab=="Simulator" then preview(ui,a);ui:title("WORLD PREVIEW");avatarPreview(ui,a,true);ui:chips({"Use simulator","Use game"},function(n) a:modeSet(if n=="Use game" then "Game" else "Simulator") end,2);simMap(ui,a);ui:chips({"Damage −25","Heal +25","Respawn","Add player","Move players","Clear players"},function(k) a:simulate(k);ui:open("Simulator") end,3);local hp=ui:box("Set virtual HP",tostring(a.sim.hp));local mx=ui:box("Virtual max HP",tostring(a.sim.max));ui:chips({"Apply virtual vitals"},function() local h,m=tonumber(hp.Text),tonumber(mx.Text);assert(m and h and m>=1 and m<=100000 and h>=0 and h<=m,"Invalid HP / maximum");a:modeSet("Simulator");a:simVitals(h,m,"set") end,1)
+ elseif tab=="Aim Helper" then AimPractice.mount(ui,a)
  elseif tab=="Scripts" then scripts(ui,a)
  elseif tab=="Profiles" then configs(ui,a)
  elseif tab=="List" then
@@ -4497,6 +4618,17 @@ function S.copy(v) if type(v)~="table" then return v end;local r={};for k,x in v
 local function str(s,n) return type(s)=="string" and #s<=n and utf8.len(s)~=nil end
 local function name(s) return str(s,48) and s:match("%S") and not s:find("%c") end
 local function hex(s) return type(s)=="string" and #s==6 and s:match("^%x+$")~=nil end
+-- Independent practice-scene settings.
+toggle("Aim Helper","aimPracticeMarker","Landing marker",true)
+toggle("Aim Helper","aimPracticeAuto","Auto turn practice dummy",false)
+toggle("Aim Helper","aimPracticeTrail","Show trajectory",true)
+choice("Aim Helper","aimPracticeZone","Target zone","Center",{"Left","Center","Right"})
+range("Aim Helper","aimPracticeAngle","Manual angle (degrees)",0,-45,45)
+range("Aim Helper","aimPracticeTurn","Turn smoothing %",85,20,200)
+range("Aim Helper","aimPracticeSpeed","Preview speed %",100,25,200)
+range("Aim Helper","aimPracticeSize","Marker size %",100,30,180)
+range("Aim Helper","aimPracticeOpacity","Marker opacity %",85,0,100)
+color("Aim Helper","aimPracticeColor","Marker color","83E0FF")
 function S.value(k,v)
  local d=S.defs[k];if not d then error("Unknown setting: "..tostring(k),0) end
  local a=d.kind

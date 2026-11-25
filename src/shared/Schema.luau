@@ -67,6 +67,17 @@ function S.copy(v) if type(v)~="table" then return v end;local r={};for k,x in v
 local function str(s,n) return type(s)=="string" and #s<=n and utf8.len(s)~=nil end
 local function name(s) return str(s,48) and s:match("%S") and not s:find("%c") end
 local function hex(s) return type(s)=="string" and #s==6 and s:match("^%x+$")~=nil end
+-- Independent practice-scene settings.
+toggle("Aim Helper","aimPracticeMarker","Landing marker",true)
+toggle("Aim Helper","aimPracticeAuto","Auto turn practice dummy",false)
+toggle("Aim Helper","aimPracticeTrail","Show trajectory",true)
+choice("Aim Helper","aimPracticeZone","Target zone","Center",{"Left","Center","Right"})
+range("Aim Helper","aimPracticeAngle","Manual angle (degrees)",0,-45,45)
+range("Aim Helper","aimPracticeTurn","Turn smoothing %",85,20,200)
+range("Aim Helper","aimPracticeSpeed","Preview speed %",100,25,200)
+range("Aim Helper","aimPracticeSize","Marker size %",100,30,180)
+range("Aim Helper","aimPracticeOpacity","Marker opacity %",85,0,100)
+color("Aim Helper","aimPracticeColor","Marker color","83E0FF")
 function S.value(k,v)
  local d=S.defs[k];if not d then error("Unknown setting: "..tostring(k),0) end
  local a=d.kind

@@ -16,7 +16,7 @@ I.tabs={
  Dashboard="Dashboard",HUD="HUD",Character="Profile",Wings="Favorites",
  Halos="AI_Assistant",Neon="Themes",Ambient="World_FX",Indicators="Indicators",
  Cursor="Assets",Camera="Media",Interaction="Games",List="Update",Fonts="Fonts",Simulator="Simulator",
- Scripts="Console",Profiles="Cloud",Diagnostics="Debug"
+ ["Aim Helper"]="Simulator",Scripts="Console",Profiles="Cloud",Diagnostics="Debug"
 }
 -- Procedural silhouettes supply HD textures and offline line-art fallback.
 -- Coordinates are normalized to a 24 by 24 icon, independent of display size.
